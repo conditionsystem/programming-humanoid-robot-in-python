@@ -21,7 +21,8 @@
 
 
 from pid import PIDAgent
-from keyframes import hello
+from keyframes import *
+
 
 
 class AngleInterpolationAgent(PIDAgent):
@@ -32,6 +33,7 @@ class AngleInterpolationAgent(PIDAgent):
                  sync_mode=True):
         super(AngleInterpolationAgent, self).__init__(simspark_ip, simspark_port, teamname, player_id, sync_mode)
         self.keyframes = ([], [], [])
+        self.local_frame = self.perception.time
 
     def think(self, perception):
         target_joints = self.angle_interpolation(self.keyframes, perception)
@@ -41,10 +43,41 @@ class AngleInterpolationAgent(PIDAgent):
     def angle_interpolation(self, keyframes, perception):
         target_joints = {}
         # YOUR CODE HERE
+        if self.keyframes == ([], [], []):
+            self.local_frame = self.perception.time
+        names, times, keys = keyframes
+        frame_time = perception.time - self.local_frame
+        for i, name in enumerate(names):
+            if not name in self.joint_names:
+                continue
+            if name == 'RHipYawPitch':
+                name = 'LHipYawPitch'
+            for j, time in enumerate(times[i]):
+                if frame_time < time and j==0:
+                    p0 = p1 = p2 = self.perception.joint[name]
+                    p3 = keys[i][j][0]
+                    t = frame_time / time 
+                elif time < frame_time < times[i][-1]:
+                        p0 = keys[i][j][0]
+                        p1 = p0 + keys[i][j][2][2]
+                        p3 = keys[i][j+1][0]
+                        p2 = p3 + keys[i][j+1][1][2]
+                        t = (frame_time - time) / (times[i][j+1] - time)
+                else: break
+                target_joints[name] = (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3
+        finished = 0
+        for i,name in enumerate(names):
+            if times[i][-1] < frame_time:
+                finished += 1
+        if finished == len(names):
+            self.keyframes = ([], [], [])
+            self.local_frame = self.perception.time
+            
 
         return target_joints
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    #agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = wipe_forehead(None)
     agent.run()
