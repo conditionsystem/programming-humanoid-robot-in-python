@@ -14,10 +14,13 @@
 # add PYTHONPATH
 import os
 import sys
+
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'kinematics'))
 
 from inverse_kinematics import InverseKinematicsAgent
-
+from xmlrpc.server import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCRequestHandler
+from threading import Thread
 
 class ServerAgent(InverseKinematicsAgent):
     '''ServerAgent provides RPC service
@@ -27,15 +30,19 @@ class ServerAgent(InverseKinematicsAgent):
     def get_angle(self, joint_name):
         '''get sensor value of given joint'''
         # YOUR CODE HERE
+        return self.perception.joint[joint_name]
     
     def set_angle(self, joint_name, angle):
         '''set target angle of joint for PID controller
         '''
         # YOUR CODE HERE
+        self.target_joints[joint_name] = angle
+        return self.perception.joint[joint_name]
 
     def get_posture(self):
         '''return current posture of robot'''
         # YOUR CODE HERE
+        return self.recognize_posture(self.perception)
 
     def execute_keyframes(self, keyframes):
         '''excute keyframes, note this function is blocking call,
@@ -54,6 +61,11 @@ class ServerAgent(InverseKinematicsAgent):
         # YOUR CODE HERE
 
 if __name__ == '__main__':
-    agent = ServerAgent()
-    agent.run()
+    with SimpleXMLRPCServer(('localhost', 8000)) as server:
+        server.register_instance(ServerAgent(), allow_dotted_names=True)
+        server.register_multicall_functions()
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            sys.exit(0)
 
