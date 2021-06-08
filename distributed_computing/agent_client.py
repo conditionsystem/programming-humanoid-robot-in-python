@@ -54,16 +54,19 @@ class ClientAgent(object):
         e.g. return until keyframes are executed
         '''
         # YOUR CODE HERE
+        return self.s.execute_keyframes()
 
     def get_transform(self, name):
         '''get transform with given name
         '''
         # YOUR CODE HERE
+        return self.s.get_transform()
 
     def set_transform(self, effector_name, transform):
         '''solve the inverse kinematics and control joints use the results
         '''
         # YOUR CODE HERE
+        return self.s.set_transform(effector_name, transform)
 
 if __name__ == '__main__':
     agent = ClientAgent()

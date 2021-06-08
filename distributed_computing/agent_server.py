@@ -22,6 +22,8 @@ from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from threading import Thread
 
+import time
+
 class ServerAgent(InverseKinematicsAgent):
     '''ServerAgent provides RPC service
     '''
@@ -49,16 +51,23 @@ class ServerAgent(InverseKinematicsAgent):
         e.g. return until keyframes are executed
         '''
         # YOUR CODE HERE
+        self.keyframes = keyframes
+        while self.keyframes != ([], [], []):
+            time.sleep(0.01)
+        return True
+
 
     def get_transform(self, name):
         '''get transform with given name
         '''
         # YOUR CODE HERE
+        return self.transforms[name]
 
     def set_transform(self, effector_name, transform):
         '''solve the inverse kinematics and control joints use the results
         '''
         # YOUR CODE HERE
+        raise NotImplemented
 
 if __name__ == '__main__':
     with SimpleXMLRPCServer(('localhost', 8000)) as server:
